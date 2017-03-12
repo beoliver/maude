@@ -1,0 +1,131 @@
+
+fmod LIST{X :: TRIV} is protecting BOOL .
+    sort List{X} .
+    subsort X$Elt < List{X} .
+    op nil : -> List{X} [ctor] .
+    op __ : List{X} List{X} -> List{X} [assoc id: nil] .
+
+    op head : List{X} -> X$Elt .
+    op tail : List{X} -> List{X} .
+    op last : List{X} -> X$Elt .
+    op inits : List{X} -> List{X} .
+    op reverse : List{X} -> List{X} .
+    op empty? : List{X} -> Bool .
+
+    var E : X$Elt .
+    var ES : List{X} .
+
+    eq head(E ES) = E .
+    eq tail(E ES) = ES .
+    eq last(ES E) = E .
+    eq inits(ES E) = ES .
+    eq reverse(nil) = nil .
+    eq reverse(E ES) = reverse(ES) E .
+    eq empty?(nil) = true .
+    eq empty?(ES) = false .
+endfm
+
+fmod MSET{X :: TRIV} is
+    sort Mset{X} .
+    subsort X$Elt < Mset{X} .
+    op nil : -> Mset{X} [ctor] .
+    op __ : Mset{X} Mset{X} -> Mset{X} [assoc comm id: nil] .
+endfm
+
+fmod SET{X :: TRIV} is
+    sort Set{X} .
+    subsort X$Elt < Set{X} .
+    op nil : -> Set{X} [ctor] .
+    op __ : Set{X} Set{X} -> Set{X} [assoc comm id: nil] .
+    var S : Set{X} .
+    eq S S = S .
+endfm
+
+fth ORDERABLE is
+    including TRIV + BOOL .
+    op lt : Elt Elt -> Bool .
+    op gt : Elt Elt -> Bool .
+    op eq : Elt Elt -> Bool .
+endfth
+
+fmod SORTABLE-LIST{X :: ORDERABLE} is protecting BOOL .
+    sort List{X} .
+    subsort X$Elt < List{X} .
+    op nil : -> List{X} [ctor] .
+    op __ : List{X} List{X} -> List{X} [assoc id: nil] .
+    op insertionSort : List{X} -> List{X} .
+
+    op insert : X$Elt List{X} -> List{X} .
+    op helper : List{X} List{X} -> List{X} .
+    vars X Y : X$Elt .
+    vars ORDERED, UNORDERED : List{X} .
+
+    eq insert(X, nil)  = X nil .
+    eq insert(X, Y ORDERED) =
+      if lt(X, Y) or eq(X,Y) then X Y ORDERED else Y insert(X, ORDERED) fi .
+
+    eq helper(nil, ORDERED) = ORDERED .
+    eq helper(X UNORDERED, ORDERED) =
+	helper(UNORDERED, insert(X, ORDERED)) .
+
+    eq insertionSort(UNORDERED) = helper(UNORDERED, nil) .
+endfm
+
+fmod ORDERABLE-BOOLS is protecting BOOL .
+    op lt : Bool Bool -> Bool .
+    op gt : Bool Bool -> Bool .
+    op eq : Bool Bool -> Bool .
+    vars X Y : Bool .
+    eq lt(X, X) = false .
+    eq lt(true, false) = false .
+    eq lt(false, true) = true .
+    eq gt(X, Y) = lt(Y,X) .
+    eq eq(X,X) = true .
+    eq eq(true, false) = false .
+    eq eq(false, true) = false .
+endfm
+
+view BOOL' from ORDERABLE to ORDERABLE-BOOLS is
+    sort Elt to Bool .
+    op lt to lt .
+    op gt to gt .
+    op eq to eq .
+endv
+
+view INT' from ORDERABLE to INT is
+    sort Elt to Int .
+    op lt to _<_ .
+    op gt to _>_ .
+    op eq to _==_ .
+endv
+
+fmod INT-LIST is protecting LIST{Int} .
+endfm
+
+fmod INT-MSET is protecting MSET{Int} .
+endfm
+
+fmod INT-SET is protecting SET{Int} .
+endfm
+
+fmod INT-LIST' is protecting SORTABLE-LIST{INT'} .
+endfm
+
+fmod BOOL-LIST' is protecting SORTABLE-LIST{BOOL'} .
+endfm
+
+
+fth MONOID is
+    including TRIV .
+    op mempty  : -> Elt [ctor] .
+    op mappend : Elt Elt -> Elt [assoc id: mempty] .
+endfth
+
+view IntListAsMonoid from MONOID to INT-LIST is
+    sort Elt to List{Int} .
+    op mempty to nil .
+    op mappend to __ .
+endv
+
+*** red in BOOL-LIST' : insertionSort(true false true false false true) .
+*** red in INT-LIST' : insertionSort(8 4 5 2 3 1) .
